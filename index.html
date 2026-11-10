@@ -111,16 +111,22 @@ header{position:sticky;top:0;z-index:60;padding:12px 0}
 .q-result.show{display:block}
 .q-result ul{margin:8px 0 12px;padding-inline-start:20px}
 .selfb{margin-top:16px;padding:24px 26px}
-.sb-row{display:grid;grid-template-columns:150px 1fr 150px 110px;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}
-.sb-row .lbl{font-weight:700}
+.sb-group{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.sb-ghead .lbl{font-weight:700}
+.sb-more{min-height:36px;padding:0 14px;border-radius:999px;border:1px dashed rgba(45,212,191,.6);background:transparent;color:#7FF0DF;font:700 14px Heebo;cursor:pointer}
+.sb-more:hover{background:rgba(45,212,191,.12)}
+.sb-rows{display:flex;flex-direction:column;gap:8px}
+.sb-row{display:grid;grid-template-columns:1fr 150px 100px 40px;gap:12px;align-items:center}
 .sb-row select{min-height:46px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font:500 15px Heebo;padding:0 12px;width:100%}
 .sb-row select option{background:#0f2328}
 .sb-row .qty{justify-content:space-between}
 .sb-row .sub{font-weight:800;text-align:left}
+.sb-x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:14px}
 .sb-warn{margin-top:12px;font-size:14px;color:#FFD995;min-height:0}
 .sb-warn:empty{display:none}
 .sb-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;margin-top:18px}
-@media (max-width:640px){.sb-row{grid-template-columns:1fr 1fr;gap:8px 10px}.sb-row .lbl{grid-column:1/-1}.sb-row select{grid-column:1/-1}.selfb{padding:18px}}
+@media (max-width:640px){.sb-row{grid-template-columns:1fr auto 40px;gap:8px}.sb-row select{grid-column:1/-1}.sb-row .qty{grid-column:1}.sb-row .sub{grid-column:2}.sb-row .sb-x{grid-column:3}.selfb{padding:18px}.sb-rows{gap:14px}}
 .cats{position:sticky;top:84px;z-index:30;display:flex;gap:8px;overflow-x:auto;padding:10px;margin:30px 0 22px;border-radius:999px;scrollbar-width:none}
 .cats::-webkit-scrollbar{display:none}
 .cats button{flex:none;min-height:42px;padding:0 16px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--muted);font:700 15px Heebo;cursor:pointer}
@@ -384,7 +390,7 @@ footer a{color:var(--muted)}
 
     <div class="selfb glass" id="modeSelf" hidden>
       <strong style="display:block;font-size:18px;margin-bottom:6px">מרכיבים לבד: בוחרים סוג וכמות לכל פריט</strong>
-      <p style="margin:0 0 16px;color:var(--dim);font-size:14px">השאירו 0 בפריט שלא צריך. הסכום מתעדכן מיד.</p>
+      <p style="margin:0 0 16px;color:var(--dim);font-size:14px">רוצים יותר מסוג אחד באותה קטגוריה (למשל צלחות וגם כוסות)? לחצו "הוספת סוג נוסף". שורות עם 0 לא ייכנסו להזמנה.</p>
       <div id="selfRows"></div>
       <div id="selfWarn" class="sb-warn" aria-live="polite"></div>
       <div class="sb-foot">
@@ -662,24 +668,41 @@ document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click'
 // self builder
 const catItems = id => DATA.cats.find(c => c.id === id).items.filter(i => i.price !== null);
 const SELF = [
-  {key:'tent', label:'אוהל', opts: catItems('tents'), qty:1},
-  {key:'chair', label:'כסאות', opts: chairOpts, qty:40},
-  {key:'table', label:'שולחנות', opts: tableOpts, qty:6},
-  {key:'cloth', label:'מפות', opts: catItems('linen'), qty:0},
-  {key:'dish', label:'כלים', opts: catItems('dishes'), qty:0},
-  {key:'heat', label:'חימום', opts: catItems('heat'), qty:0},
-  {key:'cool', label:'צינון', opts: catItems('cool'), qty:0},
-  {key:'light', label:'תאורה', opts: catItems('light'), qty:0},
-  {key:'fridge', label:'מקרר', opts: catItems('fridge'), qty:0},
+  {key:'tent', label:'אוהלים', opts: catItems('tents')},
+  {key:'chair', label:'כסאות', opts: DATA.cats.find(c => c.id === 'chairs').items},
+  {key:'table', label:'שולחנות', opts: tableOpts},
+  {key:'cloth', label:'מפות ובדים', opts: catItems('linen')},
+  {key:'dish', label:'כלים', opts: catItems('dishes')},
+  {key:'lounge', label:'ציוד אלטרנטיבי', opts: catItems('lounge')},
+  {key:'heat', label:'חימום', opts: catItems('heat')},
+  {key:'cool', label:'צינון', opts: catItems('cool')},
+  {key:'light', label:'תאורה', opts: catItems('light')},
+  {key:'fridge', label:'מקררים', opts: catItems('fridge')},
+  {key:'shabbat', label:'מוצרים לשבת', opts: catItems('shabbat')},
+  {key:'buffet', label:'מזנונים', opts: catItems('buffet')},
+  {key:'food', label:'מכונות מזון', opts: catItems('food')},
+  {key:'av', label:'הגברה והקרנה', opts: catItems('av')},
+  {key:'shade', label:'הצללה', opts: catItems('shade')},
 ];
+const TENT_CAP = {t44:40, t46:40, t48:60, t410:80, t512:100};
 function optLabel(i){ return i.variants ? i.variants.map(v => `<option value="${i.id}|${esc(v[0])}">${esc(i.name)} – ${esc(v[0])} (${fmt(v[1])})</option>`).join('') : `<option value="${i.id}">${esc(i.name)} (${fmt(i.price)})</option>`; }
-$('#selfRows').innerHTML = SELF.map(r => `<div class="sb-row" data-row="${r.key}">
-  <span class="lbl">${r.label}</span>
-  <select aria-label="סוג – ${r.label}">${r.opts.map(optLabel).join('')}</select>
-  <div class="qty"><button type="button" data-sdec aria-label="פחות">−</button><input type="number" min="0" value="${r.qty}" data-sq aria-label="כמות – ${r.label}"><button type="button" data-sinc aria-label="יותר">+</button></div>
-  <span class="sub">0 ₪</span></div>`).join('');
+function rowHTML(g, idx){
+  const r = SELF.find(x => x.key === g);
+  const opts = r.opts.map(optLabel).join('');
+  return `<div class="sb-row" data-row="${g}">
+    <select aria-label="סוג – ${r.label}">${opts}</select>
+    <div class="qty"><button type="button" data-sdec aria-label="פחות">−</button><input type="number" min="0" value="0" data-sq aria-label="כמות – ${r.label}"><button type="button" data-sinc aria-label="יותר">+</button></div>
+    <span class="sub">0 ₪</span>
+    <button type="button" class="sb-x" data-srm aria-label="הסרת השורה">✕</button></div>`;
+}
+function selfInit(){
+  $('#selfRows').innerHTML = SELF.map(r => `<div class="sb-group" data-group="${r.key}">
+    <div class="sb-ghead"><span class="lbl">${r.label}</span><button type="button" class="sb-more" data-smore="${r.key}">+ הוספת סוג נוסף</button></div>
+    <div class="sb-rows">${rowHTML(r.key)}</div></div>`).join('');
+  selfCalc();
+}
 function selfRead(){
-  return [...document.querySelectorAll('[data-row]')].map(row => {
+  return [...document.querySelectorAll('#selfRows [data-row]')].map(row => {
     const [id, v] = $('select', row).value.split('|'); const q = Math.max(0, parseInt($('[data-sq]', row).value) || 0);
     return {row, key: row.dataset.row, id, v: v || null, q, sum: unitPrice(ITEMS[id], v) * q};
   });
@@ -687,27 +710,37 @@ function selfRead(){
 function selfCalc(){
   const rs = selfRead(); let t = 0;
   rs.forEach(r => { $('.sub', r.row).textContent = fmt(r.sum); t += r.sum; });
+  document.querySelectorAll('.sb-group').forEach(g => { const rows = g.querySelectorAll('[data-row]'); rows.forEach(r => { $('[data-srm]', r).style.visibility = rows.length > 1 ? 'visible' : 'hidden'; }); });
   $('#selfTotal').textContent = fmt(t);
-  const tent = rs.find(r => r.key === 'tent'), ch = rs.find(r => r.key === 'chair');
-  let w = '';
-  if (tent.q > 0) { const cap = ({t44:40,t46:40,t48:60,t410:80,t512:100})[tent.id] * tent.q; if (ch.q > cap) w = `שימו לב: בחרתם ${ch.q} כסאות, והאוהל שנבחר מתאים לעד ${cap} אנשים בישיבה. כדאי לבחור אוהל גדול יותר או להתייעץ איתנו.`; }
-  $('#selfWarn').textContent = w;
+  const cap = rs.filter(r => r.key === 'tent').reduce((s, r) => s + (TENT_CAP[r.id] || 0) * r.q, 0);
+  const seats = rs.filter(r => r.key === 'chair' && r.id !== 'c_cush').reduce((s, r) => s + r.q, 0);
+  $('#selfWarn').textContent = cap > 0 && seats > cap ? `שימו לב: בחרתם ${seats} כסאות, והאוהלים שנבחרו מתאימים לעד ${cap} אנשים בישיבה. כדאי לבחור אוהל גדול יותר או להתייעץ איתנו.` : '';
 }
 $('#selfRows').addEventListener('click', e => {
-  const row = e.target.closest('[data-row]'); if (!row) return; const q = $('[data-sq]', row);
+  const more = e.target.closest('[data-smore]');
+  if (more) {
+    const box = more.closest('.sb-group').querySelector('.sb-rows');
+    box.insertAdjacentHTML('beforeend', rowHTML(more.dataset.smore));
+    const sel = box.lastElementChild.querySelector('select'), used = [...box.querySelectorAll('select')].slice(0, -1).map(x => x.value);
+    const free = [...sel.options].find(o => !used.includes(o.value)); if (free) sel.value = free.value;
+    selfCalc(); box.lastElementChild.querySelector('[data-sq]').focus(); return;
+  }
+  const row = e.target.closest('[data-row]'); if (!row) return;
+  if (e.target.closest('[data-srm]')) { row.remove(); selfCalc(); return; }
+  const q = $('[data-sq]', row);
   if (e.target.closest('[data-sinc]')) q.value = (parseInt(q.value) || 0) + 1;
   if (e.target.closest('[data-sdec]')) q.value = Math.max(0, (parseInt(q.value) || 0) - 1);
   selfCalc();
 });
 $('#selfRows').addEventListener('input', selfCalc);
 $('#selfRows').addEventListener('change', selfCalc);
-$('#selfReset').addEventListener('click', () => { document.querySelectorAll('[data-row]').forEach((row, i) => { $('select', row).selectedIndex = 0; $('[data-sq]', row).value = SELF[i].qty; }); selfCalc(); });
+$('#selfReset').addEventListener('click', () => { selfInit(); toast('ההרכב אופס'); });
 $('#selfAdd').addEventListener('click', () => {
   const rs = selfRead().filter(r => r.q > 0);
   if (!rs.length) { toast('בחרו כמות לפחות בפריט אחד'); return; }
   rs.forEach(r => addToCart(r.id, r.q, r.v)); toast('ההרכב נוסף להזמנה'); openCart();
 });
-selfCalc();
+selfInit();
 
 // cart render
 function cartLines(){
